@@ -26,6 +26,8 @@ LIBNAME=$2
 
 parameters=()
 
+prefixes=(user barelib hal microkernel libnanvix ulibc multikernel libmpi)
+
 for section in text data bss rodata; 
 do
 	section_names=$(
@@ -37,7 +39,19 @@ do
 	)
 	for name in $section_names;
 	do
-		parameters+=(--rename-section $name=.$LIBNAME$name)
+		valid=1
+		name_prefix="$(cut -d . -f 2 <<< $name)"
+		for prefix in ${prefixes[@]};
+		do
+			if [ $name_prefix == $prefix ]; then
+				valid=0
+				break
+			fi
+		done;
+		if [ $valid -eq 1 ];
+		then
+			parameters+=(--rename-section $name=.$LIBNAME$name)
+		fi
 	done;
 done;
 

@@ -34,73 +34,127 @@ BOOT_DELAY=2
 #
 GDB_PORT=1234
 
-#
-# Sets up development tools.
-#
-function setup_toolchain
+function setup_binutils
 {
-	# Required variables.
-	local CURDIR=`pwd`
-	local WORKDIR=$SCRIPT_DIR/toolchain/arm64
+	local WORKDIR=$1
 	local PREFIX=$WORKDIR
+	local CURDIR=`pwd`
+	local VERSION=2.40
 	local TARGET=aarch64-elf
-	local COMMIT=8d501d2f4a3358aec602f2e84fed63370d12f05a
-	
+
 	# Retrieve the number of processor cores
 	local NCORES=`grep -c ^processor /proc/cpuinfo`
 
+	# Enter work directory.
 	mkdir -p $WORKDIR
 	cd $WORKDIR
 
-	# Get toolchain.
-	wget "https://github.com/nanvix/toolchain/archive/$COMMIT.zip"
-	unzip $COMMIT.zip
-	mv toolchain-$COMMIT/* .
+	# Create build directory.
+	mkdir -p build && cd build
 
-	# Cleanup.
-	rm -rf toolchain-$COMMIT
-	rm -rf $COMMIT.zip
+	# Get sources.
+	wget https://ftp.gnu.org/gnu/binutils/binutils-$VERSION.tar.xz
+	tar -xvf binutils-$VERSION.tar.xz
+	cd binutils-$VERSION
 
-	# Build binutils.
-	cd binutils*/
+	# Build and install.
 	./configure --target=$TARGET --prefix=$PREFIX --disable-nls
-	make -j $NCORES all
+	make all -j $NCORES
 	make install
 
 	# Cleanup.
 	cd $WORKDIR
-	rm -rf binutils*
+	rm -rf build*
 
-	# Build GCC.
-	cd gcc*/
+	# Back to the current folder
+	cd $CURDIR
+}
+
+function setup_gcc
+{
+	local WORKDIR=$1
+	local PREFIX=$WORKDIR
+	local CURDIR=`pwd`
+	local VERSION=13.1.0
+	local TARGET=aarch64-elf
+
+	# Retrieve the number of processor cores
+	local NCORES=`grep -c ^processor /proc/cpuinfo`
+
+	# Enter work directory.
+	mkdir -p $WORKDIR
+	cd $WORKDIR
+
+	# Create build directory.
+	mkdir -p build && cd build
+
+	# Get sources.
+	wget https://ftp.gnu.org/gnu/gcc/gcc-$VERSION/gcc-$VERSION.tar.xz
+	tar -xvf gcc-$VERSION.tar.xz
+	cd gcc-$VERSION
+
 	./contrib/download_prerequisites
-	mkdir build
-	cd build
+
+	# Build and install.
+	mkdir build && cd build
 	../configure --target=$TARGET --prefix=$PREFIX --disable-nls --enable-languages=c --without-headers --disable-multilib
-	make -j $NCORES all-gcc
-	make -j $NCORES all-target-libgcc
-	make install-gcc
-	make install-target-libgcc
+	make -j $NCORES all-gcc all-target-libgcc
+	make -j install-gcc install-target-libgcc
 
 	# Cleanup.
 	cd $WORKDIR
-	rm -rf gcc*
+	rm -rf build*
 
-	# Build GDB.
+	# Back to the current folder
+	cd $CURDIR
+}
+
+function setup_gdb
+{
+	local WORKDIR=$1
+	local PREFIX=$WORKDIR
+	local CURDIR=`pwd`
+	local VERSION=13.1
+	local TARGET=aarch64-elf
+
+	# Retrieve the number of processor cores
+	local NCORES=`grep -c ^processor /proc/cpuinfo`
+
+	# Enter work directory.
+	mkdir -p $WORKDIR
 	cd $WORKDIR
-	cd gdb*/
-	mkdir build
-	cd build
-	../configure --target=$TARGET --prefix=$PREFIX --with-auto-load-safe-path=/ --with-guile=no
+
+	# Create build directory.
+	mkdir -p build && cd build
+
+	# Get sources.
+	wget https://ftp.gnu.org/gnu/gdb/gdb-$VERSION.tar.xz
+	tar -xvf gdb-$VERSION.tar.xz
+	cd gdb-$VERSION
+
+	# Build and install.
+	./configure --target=$TARGET --prefix=$PREFIX --with-auto-load-safe-path=/ --with-guile=no
 	make -j $NCORES
 	make install
 
 	# Cleanup.
 	cd $WORKDIR
-	rm -rf gdb*
+	rm -rf build*
 
 	# Back to the current folder
 	cd $CURDIR
+}
+
+#
+# Sets up development tools.
+#
+function setup_toolchain
+{
+	local WORKDIR=$SCRIPT_DIR/toolchain/arm64
+
+	setup_binutils $WORKDIR
+	setup_gcc $WORKDIR
+	setup_gdb $WORKDIR
 }
 
 #

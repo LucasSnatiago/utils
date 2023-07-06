@@ -72,8 +72,7 @@ case "$TARGET" in
 	"qemu-x86"      | \
 	"qemu-openrisc" | \
 	"qemu-riscv32"  | \
-	"qemu-arm64"    | \
-	"optimsoc")
+	"qemu-arm64")
 		source $SCRIPT_DIR/arch/$TARGET.sh
 		;;
 	*)

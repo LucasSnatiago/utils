@@ -53,7 +53,7 @@ case "$DISTRO" in
 			libsdl2-dev      \
 			libtool          \
 			net-tools        \
-			python           \
+			python3          \
 			texinfo          \
 			uml-utilities    \
 			unzip            \
